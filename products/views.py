@@ -60,7 +60,8 @@ from rest_framework.decorators import action
 from rest_framework.response import Response
 from rest_framework.permissions import IsAdminUser
 from .models import Product
-
+from .models import ProductFeature
+from django.db import transaction
 class AdminArtistProductViewSet(viewsets.ModelViewSet):
     queryset = ArtistProduct.objects.all()
     serializer_class = ArtistProductSerializer
@@ -70,40 +71,52 @@ class AdminArtistProductViewSet(viewsets.ModelViewSet):
     def approve(self, request, pk=None):
         artist_product = self.get_object()
 
-        # 🚫 Prevent double approval
         if artist_product.status == "approved":
-            return Response(
-                {"error": "Already approved"},
-                status=status.HTTP_400_BAD_REQUEST
-            )
+            return Response({"error": "Already approved"}, status=400)
 
-        # ✅ Create Product
-        product = Product.objects.create(
-            name=artist_product.name,
-            cost=artist_product.cost,
-            discount=artist_product.discount,
-            oldprice=artist_product.oldprice,
-            stock=artist_product.stock,
-            rating=artist_product.rating,
-            img=artist_product.images.first().image
-                if artist_product.images.exists()
-                else None,
-            artist=artist_product.artist
-        )
+        try:
+            # 🛡️ Wrap in a transaction to prevent partial data creation
+            with transaction.atomic():
+                # 1. Create the main Product
+                product = Product.objects.create(
+                    name=artist_product.name,
+                    cost=artist_product.cost,
+                    discount=artist_product.discount,
+                    oldprice=artist_product.oldprice,
+                    stock=artist_product.stock,
+                    rating=artist_product.rating,
+                    # Description was missing in your previous create call but exists in ArtistProduct
+                    # Ensure your Product model has a description field if you want to save it!
+                    img=artist_product.images.first().image if artist_product.images.exists() else None,
+                    artist=artist_product.artist
+                )
 
-        # ✅ Copy Multiple Images
-        for image in artist_product.images.all():
-            ProductImage.objects.create(
-                product=product,
-                image=image.image
-            )
+                # 2. Copy images
+                for artist_img in artist_product.images.all():
+                    ProductImage.objects.create(
+                        product=product,
+                        image=artist_img.image
+                    )
 
-        # ✅ Mark as approved
-        artist_product.status = "approved"
-        artist_product.save()
+                # 3. Copy features (FIXED FIELD NAME HERE)
+                if artist_product.features:
+                    # Split by comma and strip whitespace
+                    features_list = artist_product.features.split(",")
+                    for f_text in features_list:
+                        if f_text.strip(): # Avoid empty strings
+                            ProductFeature.objects.create(
+                                product=product,
+                                title=f_text.strip()  # ✅ Changed 'feature' to 'title'
+                            )
 
-        return Response({"message": "Product approved successfully"})
+                # 4. Update status
+                artist_product.status = "approved"
+                artist_product.save()
 
+            return Response({"message": "Product approved successfully"}, status=status.HTTP_201_CREATED)
+
+        except Exception as e:
+            return Response({"error": f"Approval failed: {str(e)}"}, status=500)
     @action(detail=True, methods=["post"])
     def reject(self, request, pk=None):
         artist_product = self.get_object()

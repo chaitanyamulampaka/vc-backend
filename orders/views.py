@@ -137,10 +137,13 @@ def my_orders(request):
     for order in orders:
 
         items = []
-
+        
         for item in order.items.all():
+            image_url = item.product.img.url if item.product.img else None
             items.append({
+                "product_id": item.product.id,
                 "product_name": item.product.name,
+                "product_image": image_url,
                 "quantity": item.quantity,
                 "price": item.price_at_purchase,
             })

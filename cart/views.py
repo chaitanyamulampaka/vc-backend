@@ -15,7 +15,7 @@ class CartViewSet(viewsets.ViewSet):
 
     def list(self, request):
         cart, created = Cart.objects.get_or_create(user=request.user)
-        serializer = CartSerializer(cart)
+        serializer = CartSerializer(cart,context={'request': request})
         return Response(serializer.data)
 
     @transaction.atomic

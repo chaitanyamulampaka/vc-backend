@@ -10,12 +10,22 @@ class CartItemSerializer(serializers.ModelSerializer):
         decimal_places=2,
         read_only=True
     )
-
+    product_image = serializers.SerializerMethodField()
+    
     class Meta:
         model = CartItem
-        fields = ["id", "product", "product_name", "product_price", "quantity"]
+        fields = ["id", "product", "product_name", "product_price","product_image", "quantity"]
 
-
+    def get_product_image(self, obj):
+        request = self.context.get('request')
+        # Check if product has an image
+        if obj.product.img:
+            image_url = obj.product.img.url
+            # If request is available, return absolute URL (http://127.0.0.1:8000/media/...)
+            if request is not None:
+                return request.build_absolute_uri(image_url)
+            return image_url
+        return None
 class CartSerializer(serializers.ModelSerializer):
     items = CartItemSerializer(many=True, read_only=True)
 

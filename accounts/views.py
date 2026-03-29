@@ -36,7 +36,9 @@ class CurrentUserView(APIView):
             "id": request.user.id,
             "username": request.user.username,
             "role": request.user.profile.role,
-            "is_staff": request.user.is_staff
+            "is_staff": request.user.is_staff,
+            "email": request.user.email,
+            "first_name": request.user.first_name,
         })
 
 from rest_framework import viewsets
