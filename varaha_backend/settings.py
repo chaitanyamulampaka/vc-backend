@@ -56,9 +56,7 @@ MIDDLEWARE = [
 ROOT_URLCONF = 'varaha_backend.urls'
 
 # CORS (SECURE)
-CORS_ALLOWED_ORIGINS = [
-    "https://vc-frontend.vercel.app",
-]
+CORS_ALLOW_ALL_ORIGINS = True
 
 # TEMPLATES
 TEMPLATES = [
