@@ -9,6 +9,18 @@ from rest_framework.response import Response
 from rest_framework import status
 from django.contrib.auth.models import User
 from .models import Profile
+from django.contrib.auth.models import User
+from django.http import HttpResponse
+
+def create_admin(request):
+    if not User.objects.filter(username='admin').exists():
+        User.objects.create_superuser(
+            username='chaitanya',
+            email='chaitanyamulampaka@gmail.com',
+            password='omnamahsivaya'
+        )
+        return HttpResponse("Admin created ✅")
+    return HttpResponse("Admin already exists ⚠️")
 
 class RegisterView(APIView):
 
