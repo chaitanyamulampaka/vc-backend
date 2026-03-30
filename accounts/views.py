@@ -12,15 +12,24 @@ from .models import Profile
 from django.contrib.auth.models import User
 from django.http import HttpResponse
 
+from django.contrib.auth import get_user_model
+from django.http import HttpResponse
+
+User = get_user_model()
+
 def create_admin(request):
-    if not User.objects.filter(username='admin').exists():
-        User.objects.create_superuser(
-            username='chaitanya',
-            email='chaitanyamulampaka@gmail.com',
-            password='omnamahsivaya'
-        )
-        return HttpResponse("Admin created ✅")
-    return HttpResponse("Admin already exists ⚠️")
+    try:
+        if not User.objects.filter(username='admin').exists():
+            User.objects.create_superuser(
+                username='admin',
+                email='chaitanyamulampaka@gmail.com',
+                password='omnamahsivaya'
+            )
+            return HttpResponse("Admin created ✅")
+        return HttpResponse("Admin already exists ⚠️")
+    
+    except Exception as e:
+        return HttpResponse(f"Error: {str(e)}")
 
 class RegisterView(APIView):
 
