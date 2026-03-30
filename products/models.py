@@ -1,6 +1,6 @@
 from django.db import models
-
 from django.contrib.auth.models import User
+from cloudinary.models import CloudinaryField
 
 class Product(models.Model): 
     name = models.CharField(max_length=255)
@@ -9,7 +9,7 @@ class Product(models.Model):
     oldprice = models.DecimalField(max_digits=10, decimal_places=2, null=True, blank=True)
     rating = models.IntegerField(default=0, choices=[(i, i) for i in range(1, 6)])
     stock = models.IntegerField(default=0)
-    img = models.ImageField(upload_to="product_imgs/", null=True, blank=True) 
+    img = CloudinaryField('image', folder='product_imgs/', null=True, blank=True) 
 
     # 🔥 NEW FIELD
     artist = models.ForeignKey(
@@ -31,7 +31,7 @@ class ProductImage(models.Model):
         on_delete=models.CASCADE,
         related_name='images' 
     )
-    image = models.ImageField(upload_to='product_imgs/')
+    image = CloudinaryField('image', folder='product_imgs/')
     
 
     def __str__(self):

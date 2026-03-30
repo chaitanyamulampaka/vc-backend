@@ -138,7 +138,7 @@ STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
 
 # MEDIA FILES
 MEDIA_URL = '/media/'
-MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
+# MEDIA_ROOT = os.path.join(BASE_DIR, 'media')  # Not needed with Cloudinary
 
 # ENV VARIABLES
 SHIPROCKET_EMAIL = os.getenv("SHIPROCKET_EMAIL")
