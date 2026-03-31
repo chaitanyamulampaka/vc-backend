@@ -1,5 +1,7 @@
 from django.shortcuts import render
 from django.http import HttpResponse,JsonResponse
+from django.core.files import File
+import os
 from .models import ArtistProductImage, Product, ProductImage
 from .serializer import ProductImageSerializer, ProductSerializer
 from rest_framework import status
@@ -77,7 +79,7 @@ class AdminArtistProductViewSet(viewsets.ModelViewSet):
         try:
             # 🛡️ Wrap in a transaction to prevent partial data creation
             with transaction.atomic():
-                # 1. Create the main Product
+                # 1. Create the main Product (without img first, do Cloudinary upload explicitly)
                 product = Product.objects.create(
                     name=artist_product.name,
                     cost=artist_product.cost,
@@ -85,18 +87,21 @@ class AdminArtistProductViewSet(viewsets.ModelViewSet):
                     oldprice=artist_product.oldprice,
                     stock=artist_product.stock,
                     rating=artist_product.rating,
-                    # Description was missing in your previous create call but exists in ArtistProduct
-                    # Ensure your Product model has a description field if you want to save it!
-                    img=artist_product.images.first().image if artist_product.images.exists() else None,
                     artist=artist_product.artist
                 )
 
-                # 2. Copy images
+                # 2. Copy images and upload to Cloudinary-backed fields
+                if artist_product.images.exists():
+                    first_img = artist_product.images.first().image
+                    with first_img.open('rb') as f:
+                        product.img.save(os.path.basename(first_img.name), File(f), save=True)
+
                 for artist_img in artist_product.images.all():
-                    ProductImage.objects.create(
-                        product=product,
-                        image=artist_img.image
-                    )
+                    with artist_img.image.open('rb') as f:
+                        product_image = ProductImage(product=product)
+                        product_image.image.save(os.path.basename(artist_img.image.name), File(f), save=True)
+                        product_image.save()
+
 
                 # 3. Copy features (FIXED FIELD NAME HERE)
                 if artist_product.features:
